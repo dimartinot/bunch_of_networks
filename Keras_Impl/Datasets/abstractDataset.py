@@ -21,3 +21,15 @@ class Dataset(ABC):
         """
             Method to overwrite to retrieve testing data
         """
+
+    @abstractmethod
+    def getInputShape(self):
+        """
+            Method to overwrite to retrieve the input shape to setup our network with.
+        """
+
+    @abstractmethod
+    def getNumClasses(self):
+        """
+            Method to overwrite to retrieve the number of classes to setup our network with.
+        """

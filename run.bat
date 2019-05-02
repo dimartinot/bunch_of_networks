@@ -1,1 +1,1 @@
-"../deeplearning/Python3_CPU/python.exe"
+"../deeplearning/Python3_CPU/python.exe" main.py

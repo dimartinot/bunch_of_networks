@@ -19,5 +19,9 @@ class DummyDataset(ds.Dataset):
     def getTestingData(self):
         return (self.x_test, self.y_test)
     
-
+    def getInputShape(self):
+        return 1024
+    
+    def getNumClasses(self):
+        return 10
 

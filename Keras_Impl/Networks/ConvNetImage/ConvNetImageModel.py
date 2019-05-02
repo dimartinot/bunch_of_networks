@@ -13,11 +13,11 @@ NUM_OF_EPOCHS = 10
 
 BATCH_SIZE = 32
 
-DEFAULT_INPUT_SHAPE = 1024
+DEFAULT_INPUT_SHAPE = (28, 28, 1)
 
-class MLPModel(AM.Model):
+class ConvNetImage(AM.Model):
     """
-        This class implements a classic MultiLayer Perceptron model using Keras as the framework
+        This class implements a classic ConvNets model using Keras as the framework. It takes its architecture from LeCun's LeNet5
     """
     def __init__(self):
         super().__init__(self)
@@ -37,18 +37,24 @@ class MLPModel(AM.Model):
             default_num_classes = DEFAULT_INPUT_SHAPE
 
         # Model type definition
-        fc1 = KL.Dense(32, input_shape=(default_input_shape,), activation='relu')
-        dp2 = KL.Dropout(0.25)
-        fc3 = KL.Dense(16, activation='relu')
-        dp4 = KL.Dropout(0.5)
+        conv1 = KL.Conv2D(6, kernel_size=(5, 5), input_shape=(default_input_shape,), padding='valid', activation='relu')
+        pool2 = KL.Pooling(pool_size=2)
+        conv3 = KL.Conv2D(6, kernel_size=(5, 5), stride=(2,2), padding="valid", activation = 'relu')
+        pool4 = KL.Pooling(pool_size = 2)
+        flat5 = KL.Flatten()
+        fc6 = KL.Dense(120, activation='relu')
+        fc7 = KL.Dense(84, activation='relu')
+        fc8 = KL.Dense(num_classes, activation='softmax')
         # Last layer has to have a softmax activation function
-        fc5 = KL.Dense(default_num_classes,activation='softmax')
 
-        self.model.add(fc1)
-        self.model.add(dp2)
-        self.model.add(fc3)
-        self.model.add(dp4)
-        self.model.add(fc5)
+        self.model.add(conv1)
+        self.model.add(pool2)
+        self.model.add(conv3)
+        self.model.add(pool4)
+        self.model.add(flat5)
+        self.model.add(fc6)
+        self.model.add(fc7)
+        self.model.add(fc8)
 
         # Compiling of the model
         self.model.compile(optimizer='adam',

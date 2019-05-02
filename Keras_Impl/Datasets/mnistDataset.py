@@ -1,17 +1,17 @@
 import Keras_Impl.Datasets.abstractDataset as ds
 import numpy as np
-# CIFAR10 small image classification
+# MNIST database of handwritten digits
 #
-# Dataset of 50,000 32x32 color training images, labeled over 10 categories, and 10,000 test images.
-from keras.datasets import cifar10
+# Dataset of 60,000 28x28 grayscale images of the 10 digits, along with a test set of 10,000 images.
+from keras.datasets import mnist
 from keras.utils import to_categorical
 
-class Cifar10Dataset(ds.Dataset):
+class MNISTDataset(ds.Dataset):
 
     def __init__(self):
         super().__init__(self)
-        print("\tChosen Dataset: Cifar10Dataset")
-        (self.x_train, self.y_train), (self.x_test, self.y_test) = cifar10.load_data()
+        print("\tChosen Dataset: MNISTDataset")
+        (self.x_train, self.y_train), (self.x_test, self.y_test) = mnist.load_data()
     
     def getTrainingData(self):
         return (self.x_train, self.y_train)
@@ -21,8 +21,8 @@ class Cifar10Dataset(ds.Dataset):
     
     def flattenData(self):
         print(self.x_train.shape, self.x_test.shape, self.y_train.shape)
-        self.x_train = np.reshape(self.x_train, (50000,1024))
-        self.x_test = np.reshape(self.x_test, (10000,1024))
+        self.x_train = np.reshape(self.x_train, (60000,784))
+        self.x_test = np.reshape(self.x_test, (10000,784))
 
         # Normalization
 
@@ -36,7 +36,7 @@ class Cifar10Dataset(ds.Dataset):
         print(self.x_train.shape, self.x_test.shape)
 
     def getInputShape(self):
-        return 1024
+        return 784
 
     def getNumClasses(self):
         return 10

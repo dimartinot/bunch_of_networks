@@ -10,9 +10,22 @@ class MNISTDataset(ds.Dataset):
 
     def __init__(self):
         super().__init__(self)
+        self.isFlatten = False
         print("\tChosen Dataset: MNISTDataset")
         (self.x_train, self.y_train), (self.x_test, self.y_test) = mnist.load_data()
+
+        self.x_train = np.reshape(self.x_train, (60000, 28, 28, 1))
+        self.x_test = np.reshape(self.x_test, (10000, 28, 28, 1))
+
+        # Normalization
+
+        self.x_train = np.array(self.x_train) / 255
+        self.x_test = np.array(self.x_test) / 255
     
+        # convert class vectors to binary class matrices
+        self.y_train = to_categorical(self.y_train, 10)
+        self.y_test = to_categorical(self.y_test, 10)
+
     def getTrainingData(self):
         return (self.x_train, self.y_train)
 
@@ -20,23 +33,17 @@ class MNISTDataset(ds.Dataset):
         return (self.x_test, self.y_test)
     
     def flattenData(self):
-        print(self.x_train.shape, self.x_test.shape, self.y_train.shape)
+
         self.x_train = np.reshape(self.x_train, (60000,784))
         self.x_test = np.reshape(self.x_test, (10000,784))
 
-        # Normalization
-
-        self.x_train = np.array(self.x_train) / 255
-        self.x_test = np.array(self.x_test) / 255
-
-        # convert class vectors to binary class matrices
-        self.y_train = to_categorical(self.y_train, 10)
-        self.y_test = to_categorical(self.y_test, 10)
-
-        print(self.x_train.shape, self.x_test.shape)
+        self.isFlatten = True
 
     def getInputShape(self):
-        return 784
+        if self.isFlatten:
+            return 784
+        else:
+            return (28, 28, 1)
 
     def getNumClasses(self):
         return 10

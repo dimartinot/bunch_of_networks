@@ -13,11 +13,11 @@ NUM_OF_EPOCHS = 10
 
 BATCH_SIZE = 32
 
-DEFAULT_INPUT_SHAPE = (28, 28, 1)
+DEFAULT_INPUT_SHAPE = (227, 227, 3)
 
-class ConvNetImageModel(AM.Model):
+class AlexNetModel(AM.Model):
     """
-        This class implements a classic ConvNets model using Keras as the framework. It takes its architecture from LeCun's LeNet5
+        This class implements a classic AlexNet model using Keras as the framework. It takes its architecture from Ilya Sutskever and Krizhevsky's network.
     """
     def __init__(self):
         super().__init__(self)
@@ -36,34 +36,34 @@ class ConvNetImageModel(AM.Model):
         else:
             default_num_classes = DEFAULT_INPUT_SHAPE
 
-        print(default_input_shape)
+        conv1 = KL.Conv2D(96, kernel_size=(11, 11), input_shape=default_input_shape, strides=4, padding='valid', activation='relu')
+        pool1 = KL.MaxPooling2D(pool_size=(3, 3), strides=2)
 
-        # Model type definition
-        conv1 = KL.Conv2D(6, kernel_size=(5, 5), input_shape=default_input_shape, padding='valid', activation='relu')
-        pool2 = KL.AveragePooling2D()
-        conv3 = KL.Conv2D(16, kernel_size=(5, 5), strides=(2,2), padding="valid", activation = 'relu')
-        pool4 = KL.AveragePooling2D()
-        flat5 = KL.Flatten()
-        fc6 = KL.Dense(120, activation='relu')
-        fc7 = KL.Dense(84, activation='relu')
-        fc8 = KL.Dense(num_classes, activation='softmax')
-        # Last layer has to have a softmax activation function
+        conv2 = KL.Conv2D(256, kernel_size=(5, 5), padding='valid', activation="relu")
+        pool2 = KL.MaxPooling2D(pool_size=(3, 3), strides=2)
 
-        self.model.add(conv1)
-        self.model.add(pool2)
-        self.model.add(conv3)
-        self.model.add(pool4)
-        self.model.add(flat5)
-        self.model.add(fc6)
-        self.model.add(fc7)
-        self.model.add(fc8)
+        conv3 = KL.Conv2D(384, kernel_size=(3, 3), padding='valid', activation="relu")
 
-        # Compiling of the model
-        self.model.compile(optimizer='adam',
-                            loss='categorical_crossentropy',
-                            metrics=['accuracy'])
+        conv4 = KL.Conv2D(384, kernel_size=(3, 3), padding='valid', activation="relu")
 
-    def trainModel(self,train_dataset):
+        conv5 = KL.Conv2D(256, kernel_size=(3, 3), padding='valid', activation="relu")
+        pool5 = KL.MaxPooling2D(pool_size=(3, 3), strides=2)
+
+        flat6 = KL.Flatten()
+
+        fc7 = KL.Dense(4096, activation="relu")
+        fc8 = KL.Dense(4096, activation="relu")
+
+        fc9 = KL.Dense(num_classes, activation="softmax")
+
+        list_of_layers = [conv1, pool1, conv2, pool2, conv3, conv4, conv5, pool5, flat6, fc7, fc8, fc9]
+
+        for layer in list_of_layers:
+            self.model.add(layer)
+
+        self.model.compile(optimizer='adam', loss='categorical_crossentropy',metrics=['accuracy'])
+
+    def trainModel(self, train_dataset):
         """
             For trainModel to work, data must be in the form :
             train_dataset = (x_train, y_train)
@@ -82,3 +82,5 @@ class ConvNetImageModel(AM.Model):
         score = self.model.evaluate(x_test, y_test, batch_size=BATCH_SIZE)
 
         print(score)
+
+        

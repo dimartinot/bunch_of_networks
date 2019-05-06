@@ -15,6 +15,8 @@ BATCH_SIZE = 32
 
 DEFAULT_INPUT_SHAPE = (28, 28, 1)
 
+VALIDATION_DATA = 0.2
+
 class ConvNetImageModel(AM.Model):
     """
         This class implements a classic ConvNets model using Keras as the framework. It takes its architecture from LeCun's LeNet5
@@ -34,7 +36,7 @@ class ConvNetImageModel(AM.Model):
         if (num_classes != None):
             default_num_classes = num_classes
         else:
-            default_num_classes = DEFAULT_INPUT_SHAPE
+            default_num_classes = NUM_CLASSES
 
         print(default_input_shape)
 
@@ -63,14 +65,23 @@ class ConvNetImageModel(AM.Model):
                             loss='categorical_crossentropy',
                             metrics=['accuracy'])
 
-    def trainModel(self,train_dataset):
+    def trainModel(self, train_dataset):
         """
             For trainModel to work, data must be in the form :
             train_dataset = (x_train, y_train)
         """
-        (x_train, y_train) = train_dataset
+        (x_tmp, y_tmp) = train_dataset
 
-        self.model.fit(x_train, y_train, epochs=NUM_OF_EPOCHS, batch_size=BATCH_SIZE)
+        callbacks = [
+            keras.callbacks.TensorBoard(log_dir='./logs/Keras_Impl/ConvNetImage', histogram_freq=1, batch_size=32, write_graph=True, write_grads=True, write_images=True)
+        ]
+
+        size_of_validation_data = int(x_tmp.shape[0]*VALIDATION_DATA)
+
+        (x_validation, y_validation) = (x_tmp[:size_of_validation_data], y_tmp[:size_of_validation_data])
+        (x_train, y_train) = (x_tmp[size_of_validation_data:], y_tmp[size_of_validation_data:])
+
+        self.model.fit(x_train, y_train, epochs=NUM_OF_EPOCHS, batch_size=BATCH_SIZE, callbacks=callbacks, validation_data=(x_validation, y_validation))
 
     def evaluateModel(self,test_dataset):
         """
@@ -82,3 +93,6 @@ class ConvNetImageModel(AM.Model):
         score = self.model.evaluate(x_test, y_test, batch_size=BATCH_SIZE)
 
         print(score)
+
+    def getName(self):
+        return "ConvNet (LeNet5)"

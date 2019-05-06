@@ -15,6 +15,8 @@ BATCH_SIZE = 32
 
 DEFAULT_INPUT_SHAPE = (227, 227, 3)
 
+VALIDATION_DATA = 0.2
+
 class AlexNetModel(AM.Model):
     """
         This class implements a classic AlexNet model using Keras as the framework. It takes its architecture from Ilya Sutskever and Krizhevsky's network.
@@ -34,7 +36,7 @@ class AlexNetModel(AM.Model):
         if (num_classes != None):
             default_num_classes = num_classes
         else:
-            default_num_classes = DEFAULT_INPUT_SHAPE
+            default_num_classes = NUM_CLASSES
 
         conv1 = KL.Conv2D(96, kernel_size=(11, 11), input_shape=default_input_shape, strides=4, padding='valid', activation='relu')
         pool1 = KL.MaxPooling2D(pool_size=(3, 3), strides=2)
@@ -51,8 +53,8 @@ class AlexNetModel(AM.Model):
 
         flat6 = KL.Flatten()
 
-        fc7 = KL.Dense(4096, activation="relu")
-        fc8 = KL.Dense(4096, activation="relu")
+        fc7 = KL.Conv2D(4096, kernel_size=(1, 1), padding='valid', activation="relu")
+        fc8 = KL.Conv2D(4096, kernel_size=(1, 1), padding='valid', activation="relu")
 
         fc9 = KL.Dense(num_classes, activation="softmax")
 
@@ -61,6 +63,8 @@ class AlexNetModel(AM.Model):
         for layer in list_of_layers:
             self.model.add(layer)
 
+
+
         self.model.compile(optimizer='adam', loss='categorical_crossentropy',metrics=['accuracy'])
 
     def trainModel(self, train_dataset):
@@ -68,9 +72,18 @@ class AlexNetModel(AM.Model):
             For trainModel to work, data must be in the form :
             train_dataset = (x_train, y_train)
         """
-        (x_train, y_train) = train_dataset
+        (x_tmp, y_tmp) = train_dataset
 
-        self.model.fit(x_train, y_train, epochs=NUM_OF_EPOCHS, batch_size=BATCH_SIZE)
+        callbacks = [
+            keras.callbacks.TensorBoard(log_dir='./logs/Keras_Impl/AlexNet', histogram_freq=1, batch_size=32, write_graph=True, write_grads=True, write_images=True)
+        ]
+
+        size_of_validation_data = int(x_tmp.shape[0]*VALIDATION_DATA)
+
+        (x_validation, y_validation) = (x_tmp[:size_of_validation_data], y_tmp[:size_of_validation_data])
+        (x_train, y_train) = (x_tmp[size_of_validation_data:], y_tmp[size_of_validation_data:])
+
+        self.model.fit(x_train, y_train, epochs=NUM_OF_EPOCHS, batch_size=BATCH_SIZE, callbacks=callbacks, validation_data=(x_validation, y_validation))
 
     def evaluateModel(self,test_dataset):
         """
@@ -83,4 +96,5 @@ class AlexNetModel(AM.Model):
 
         print(score)
 
-        
+    def getName(self):
+        return "AlexNet"

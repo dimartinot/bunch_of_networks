@@ -23,3 +23,10 @@ class Model(ABC):
         """
             Function to overwrite to test the model
         """
+    
+    @abstractmethod
+    def getName(self):
+        """
+            Function to overwrite to print out the name of the model
+        """
+        

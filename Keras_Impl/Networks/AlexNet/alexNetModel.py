@@ -62,8 +62,7 @@ class AlexNetModel(AM.Model):
 
         for layer in list_of_layers:
             self.model.add(layer)
-
-
+            
 
         self.model.compile(optimizer='adam', loss='categorical_crossentropy',metrics=['accuracy'])
 

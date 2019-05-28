@@ -38,8 +38,6 @@ class ConvNetImageModel(AM.Model):
         else:
             default_num_classes = NUM_CLASSES
 
-        print(default_input_shape)
-
         # Model type definition
         conv1 = KL.Conv2D(6, kernel_size=(5, 5), input_shape=default_input_shape, padding='valid', activation='relu')
         pool2 = KL.AveragePooling2D()

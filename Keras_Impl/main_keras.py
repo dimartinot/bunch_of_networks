@@ -3,7 +3,7 @@ from Keras_Impl.Networks.ConvNetImage import convNetImageModel as CV
 from Keras_Impl.Networks.AlexNet import alexNetModel as AL
 from Keras_Impl.Networks.VGG import vggModel as VGG
 from Keras_Impl.Networks.GoogLeNet import googLeNetModel as GLN
-
+from Keras_Impl.Networks.ResNet import resNetModel as RN
 
 from Keras_Impl.Datasets import cifar10Dataset, dummyDataset, mnistDataset
 
@@ -50,6 +50,7 @@ def exec():
     print('\n3°/ ConvNet for image input (AlexNet)')
     print('\n4°/ ConvNet for image input (VGG16)')
     print('\n5°/ ConvNet for image input with Inception Modules (GoogLeNet)')
+    print('\n6°/ Residual Network (ResNet 2015)')
     print('')
     try:
         choice = int(input("Selection > "))
@@ -73,3 +74,6 @@ def exec():
 
     if (choice == 5):
         runModel(model=GLN.GoogLeNetModel(), dataset=dummyDataset.DummyDataset((224,224,3),1000,num_of_outputs=3), toFlatten=False)
+
+    if (choice == 6):
+        runModel(model=RN.ResNetModel(), dataset=dummyDataset.DummyDataset((224,224,3),1000), toFlatten=False)

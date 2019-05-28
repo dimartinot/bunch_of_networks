@@ -221,7 +221,7 @@ class GoogLeNetModel(AM.Model):
 
         flat12 = KL.Flatten()(drop11) # originally absent of the GoogLeNet model, this flatten layer makes sure that the last fully-connected layer has a shape of (None, 1000) and not (None, 1, 1, 1000)
 
-        fc13 = KL.Dense(num_classes, activation='softmax')(flat12)
+        fc13 = KL.Dense(default_num_classes, activation='softmax')(flat12)
 
         self.model = KM.Model(inputs=[input_layer], outputs=[aux1, aux2, fc13])
 

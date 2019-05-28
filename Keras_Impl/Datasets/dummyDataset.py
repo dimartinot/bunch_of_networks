@@ -4,7 +4,7 @@ import keras
 
 class DummyDataset(ds.Dataset):
 
-    def __init__(self, input_shape_desired, num_classes_desired):
+    def __init__(self, input_shape_desired, num_classes_desired, num_of_outputs=1):
         super().__init__(self)
         # Generate dummy data
         print("\tChosen Dataset: DummyDataset")
@@ -22,9 +22,15 @@ class DummyDataset(ds.Dataset):
             shape_x_test = (100, input_shape_desired)
        
         self.x_train = np.random.random_sample(shape_x_train)
-        self.y_train = keras.utils.to_categorical(np.random.randint(10, size=(1000, 1)), num_classes=num_classes_desired)
+        self.y_train = keras.utils.to_categorical(np.random.randint(num_classes_desired, size=(1000, 1)), num_classes=num_classes_desired)
         self.x_test = np.random.random_sample(shape_x_test)
-        self.y_test = keras.utils.to_categorical(np.random.randint(10, size=(100, 1)), num_classes=num_classes_desired)
+        self.y_test = keras.utils.to_categorical(np.random.randint(num_classes_desired, size=(100, 1)), num_classes=num_classes_desired)
+        self.num_of_outputs = num_of_outputs
+        
+        if (num_of_outputs != 1):
+            # we create the array of outputs if more than 1 output is needed
+            self.y_train = np.repeat([self.y_train], [num_of_outputs], axis=0)
+            self.y_test = np.repeat([self.y_test], [num_of_outputs], axis=0)
     
     def getTrainingData(self):
         return (self.x_train, self.y_train)
@@ -37,4 +43,7 @@ class DummyDataset(ds.Dataset):
     
     def getNumClasses(self):
         return self.num_classes
+
+    def getNumberOfOutputs(self):
+        return self.num_of_outputs
 

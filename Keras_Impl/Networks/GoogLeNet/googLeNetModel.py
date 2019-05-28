@@ -35,7 +35,7 @@ class GoogLeNetModel(AM.Model):
                 This function returns an inceptionModule as a list of Keras layers
             """
 
-            # We create the first layer of convolution: 
+            # We create the first layer of convolutions and pooling: 
             conv_1by1_1 = KL.Conv2D(number_of_filters['1_by_1'], (1,1), padding='same', activation='relu')(input_layer)
 
             conv_1by1_2 = KL.Conv2D(number_of_filters['3_by_3_reduce'], (1,1), padding='same', activation='relu')(input_layer)
@@ -55,6 +55,22 @@ class GoogLeNetModel(AM.Model):
             output = KL.concatenate([conv_1by1_1, conv_3by3, conv_5by5, conv_1by1_4], axis = 3)
 
             return output
+
+        def auxiliaryOutput(input_layer, num_classes):
+            """
+                This function returns an auxiliary output of the network.
+            """
+            pool = KL.AveragePooling2D(pool_size=(5,5), strides=3, padding='valid')(input_layer)
+
+            conv = KL.Conv2D(128, (1, 1), strides = 1, padding='same', activation='relu')(pool)
+
+            flatten = KL.Flatten()(conv)
+
+            fc1 = KL.Dense(1024, activation='relu')(flatten)
+
+            fc2 = KL.Dense(num_classes, activation='softmax')(fc1)
+
+            return fc2
 
         # Knowing this is not a good practice, we give the possibility to the user to change the default input shape from 1024 to any they want
         if (input_shape != None):
@@ -121,6 +137,8 @@ class GoogLeNetModel(AM.Model):
 
         inception3 = inceptionModule(number_of_filters=number_of_filters_inception_3, input_layer=pool8)
 
+        aux1 = auxiliaryOutput(input_layer=inception3, num_classes=num_classes)
+
         # Fourth inception module
         number_of_filters_inception_4 = {
             '1_by_1': 160,
@@ -156,6 +174,8 @@ class GoogLeNetModel(AM.Model):
         }
 
         inception6 = inceptionModule(number_of_filters=number_of_filters_inception_6, input_layer=inception5)
+
+        aux2 = auxiliaryOutput(input_layer=inception6, num_classes=num_classes)
 
         # Seventh inception module
         number_of_filters_inception_7 = {
@@ -199,9 +219,11 @@ class GoogLeNetModel(AM.Model):
 
         drop11 = KL.Dropout(rate=0.4)(pool10)
 
-        fc12 = KL.Dense(num_classes, activation='softmax')(drop11)
+        flat12 = KL.Flatten()(drop11) # originally absent of the GoogLeNet model, this flatten layer makes sure that the last fully-connected layer has a shape of (None, 1000) and not (None, 1, 1, 1000)
 
-        self.model = KM.Model(inputs=[input_layer], outputs=[fc12])
+        fc13 = KL.Dense(num_classes, activation='softmax')(flat12)
+
+        self.model = KM.Model(inputs=[input_layer], outputs=[aux1, aux2, fc13])
 
         # layers = [conv1, pool2, batch3, conv4, conv5, batch6, pool7, inception1, inception2, pool8, inception3, inception4, inception5, inception6, inception7, pool9, inception8, inception9, pool10, drop11, fc12]
 
@@ -223,10 +245,14 @@ class GoogLeNetModel(AM.Model):
             keras.callbacks.TensorBoard(log_dir='./logs/Keras_Impl/GoogLeNet', histogram_freq=1, batch_size=32, write_graph=True, write_grads=True, write_images=True)
         ]
 
-        size_of_validation_data = int(x_tmp.shape[0]*VALIDATION_DATA)
+        size_of_validation_data = int(x_tmp.shape[1]*VALIDATION_DATA)
 
-        (x_validation, y_validation) = (x_tmp[:size_of_validation_data], y_tmp[:size_of_validation_data])
-        (x_train, y_train) = (x_tmp[size_of_validation_data:], y_tmp[size_of_validation_data:])
+        (x_validation, y_validation) = (x_tmp[:size_of_validation_data], [])
+        (x_train, y_train) = (x_tmp[size_of_validation_data:], [])
+
+        for i in range(y_tmp.shape[0]):
+            y_validation.append(y_tmp[i][:size_of_validation_data])
+            y_train.append(y_tmp[i][size_of_validation_data:])
 
         self.model.fit(x_train, y_train, epochs=NUM_OF_EPOCHS, batch_size=BATCH_SIZE, callbacks=callbacks, validation_data=(x_validation, y_validation))
 
@@ -235,7 +261,12 @@ class GoogLeNetModel(AM.Model):
             For self to work, data must be in the form :
             test_dataset = (x_test, y_test)
         """
-        (x_test, y_test) = test_dataset
+        (x_tmp, y_tmp) = test_dataset
+
+        (x_test, y_test) = (x_tmp, [])
+
+        for i in range(y_tmp.shape[0]):
+            y_test.append(y_tmp[i])
 
         score = self.model.evaluate(x_test, y_test, batch_size=BATCH_SIZE)
 

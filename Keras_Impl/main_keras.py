@@ -36,7 +36,7 @@ def runModel(model, dataset=None, toFlatten=False):
 
     input("Press any key to launch training process> ")
     print("Training the model...")
-
+    
     model.trainModel(dataset.getTrainingData())
     print("Evaluating the model...")
 
@@ -72,4 +72,4 @@ def exec():
         runModel(model=VGG.VGGModel(), dataset=dummyDataset.DummyDataset((224,224,3),1000), toFlatten=False)
 
     if (choice == 5):
-        runModel(model=GLN.GoogLeNetModel(), dataset=dummyDataset.DummyDataset((224,224,3),1000), toFlatten=False)
+        runModel(model=GLN.GoogLeNetModel(), dataset=dummyDataset.DummyDataset((224,224,3),1000,num_of_outputs=3), toFlatten=False)

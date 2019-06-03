@@ -4,6 +4,7 @@ from Keras_Impl.Networks.AlexNet import alexNetModel as AL
 from Keras_Impl.Networks.VGG import vggModel as VGG
 from Keras_Impl.Networks.GoogLeNet import googLeNetModel as GLN
 from Keras_Impl.Networks.ResNet import resNetModel as RN
+from Keras_Impl.Networks.DeepFace import deepFaceModel as LCN
 
 from Keras_Impl.Datasets import cifar10Dataset, dummyDataset, mnistDataset
 
@@ -51,6 +52,7 @@ def exec():
     print('\n4°/ ConvNet for image input (VGG16)')
     print('\n5°/ ConvNet for image input with Inception Modules (GoogLeNet)')
     print('\n6°/ Residual Network (ResNet 2015)')
+    print('\n7°/ Locally Connected Network (DeepFace)')
     print('')
     try:
         choice = int(input("Selection > "))
@@ -77,3 +79,6 @@ def exec():
 
     if (choice == 6):
         runModel(model=RN.ResNetModel(), dataset=dummyDataset.DummyDataset((224,224,3),1000), toFlatten=False)
+
+    if (choice == 7):
+        runModel(model=LCN.DeepFaceModel(), dataset=dummyDataset.DummyDataset((152,152,3),1000), toFlatten=False)

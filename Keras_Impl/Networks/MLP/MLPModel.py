@@ -52,7 +52,7 @@ class MLPModel(AM.Model):
         self.model.add(dp4)
         self.model.add(fc5)
 
-        # Compiling of the model
+        # Compiling the model
         self.model.compile(optimizer='adam',
                             loss='categorical_crossentropy',
                             metrics=['accuracy'])

@@ -67,7 +67,7 @@ class DeepFaceModel(AM.Model):
 
         sgd = KO.SGD(lr=0.0001, decay=1e-4, momentum=0.9, nesterov=True)
 
-        # Compiling of the model
+        # Compiling the model
         self.model.compile(optimizer=sgd,
                             loss='categorical_crossentropy',
                             metrics=['accuracy'])

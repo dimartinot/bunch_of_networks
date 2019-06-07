@@ -5,8 +5,8 @@ from Keras_Impl.Networks.VGG import vggModel as VGG
 from Keras_Impl.Networks.GoogLeNet import googLeNetModel as GLN
 from Keras_Impl.Networks.ResNet import resNetModel as RN
 from Keras_Impl.Networks.DeepFace import deepFaceModel as LCN
-
-from Keras_Impl.Datasets import cifar10Dataset, dummyDataset, mnistDataset
+from Keras_Impl.Networks.RPN import rpnModel as RPN
+from Keras_Impl.Datasets import cifar10Dataset, dummyDataset, mnistDataset, openImageBboxDataset
 
 from termcolor import colored
 import os
@@ -53,6 +53,7 @@ def exec():
     print('\n5°/ ConvNet for image input with Inception Modules (GoogLeNet)')
     print('\n6°/ Residual Network (ResNet 2015)')
     print('\n7°/ Locally Connected Network (DeepFace)')
+    print('\n8°/ Region Proposal Network')
     print('')
     try:
         choice = int(input("Selection > "))
@@ -82,3 +83,6 @@ def exec():
 
     if (choice == 7):
         runModel(model=LCN.DeepFaceModel(), dataset=dummyDataset.DummyDataset((152,152,3),1000), toFlatten=False)
+
+    if (choice == 8):
+        runModel(model=RPN.RPNModel(), dataset=openImageBboxDataset.OpenImageBboxDataset(path_to_bounding_boxes_sheet="D:/Users/T0227964-A/Documents/BBox_Dataset/train-annotations-bbox.csv", path_to_image_files="D:/Users/T0227964-A/Documents/BBox_Dataset/train_0.tar/train_0"))

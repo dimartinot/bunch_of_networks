@@ -7,13 +7,15 @@ import pandas as pd
 import os
 from tqdm import tqdm
 
+DEFAULT_FILE_EXTENSION = '.jpg'
+
 class OpenImageBboxDataset(ds.Dataset):
 
-    def __init__(self, path_to_bounding_boxes_sheet="D:/Users/T0227964-A/Documents/BBox_Dataset/train-annotations-bbox.csv", path_to_image_files="D:/Users/T0227964-A/Documents/BBox_Dataset/train_0.tar/train_0"):
+    def __init__(self, path_to_bounding_boxes_sheet="D:/Users/T0227964-A/Documents/BBox_Dataset/train-annotations-bbox.csv", path_to_image_files="D:/Users/T0227964-A/Documents/BBox_Dataset/train_0.tar/train_0/", image_file_extension=DEFAULT_FILE_EXTENSION):
         super().__init__(self)
         self.isFlatten = False
         print("\tChosen Dataset: OpenImageBboxDataset")
-        print("Warning: This dataset does not load directly the data. instead, it provides a list of string links to the data that will need to be loaded after.")
+        print("Warning: This dataset does not load directly the data. instead, it provides a list of links to the data that will need to be loaded after.")
         print("Therefore, it suits nicely any kind of generator (with yielded outputs)")
         
         self.path_to_bounding_boxes_sheet = path_to_bounding_boxes_sheet
@@ -31,11 +33,15 @@ class OpenImageBboxDataset(ds.Dataset):
         imageIds = np.array(list(map(lambda x:x.split(".jpg")[0],os.listdir(path_to_image_files))))
         print('Linking images with corresponding bounding boxes..')
         size = len(imageIds)
+        #size = 1
         for i in tqdm(range(size)):
             imageId = imageIds[i]
             rows = csvfile[(csvfile.ImageID == imageId)][['LabelName', 'XMin', 'XMax', 'YMin', 'YMax']]
             if (len(rows) != 0):
-                self.x_train.append(imageId)
+                if (path_to_image_files[len(path_to_image_files)-1] != "/"):
+                    self.x_train.append(path_to_image_files+"/"+imageId+image_file_extension)
+                else:
+                    self.x_train.append(path_to_image_files+imageId+image_file_extension)
                 category, gt_boxes = self.rowToBoxData(rows.iterrows())
                 self.y_train[imageId] = gt_boxes
 

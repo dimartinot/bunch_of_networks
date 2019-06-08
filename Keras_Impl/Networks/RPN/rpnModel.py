@@ -7,10 +7,12 @@ import keras.engine as KE
 import keras.models as KM
 from keras.applications.inception_resnet_v2 import InceptionResNetV2
 from Keras_Impl.Networks import abstractModel as AM 
+from keras.preprocessing.image import load_img, img_to_array
 import numpy as np
+import numpy.random as npr
 from Keras_Impl.Networks.RPN.utils import *
 
-BATCH_SIZE=512
+BATCH_SIZE=16
 
 NUM_OF_EPOCHS = 100
 
@@ -22,6 +24,7 @@ SCALE_OF_ANCHORS = [3, 6, 12] # defines the scale of the 3 set of anchors : it c
 
 BG_FG_RATIO = 2 # Constant value that defines the maximum ratio between bg (0) and fg (1) training samples
 
+STEPS_PER_EPOCH = 1000
 
 class RPNModel(AM.Model):
     """
@@ -32,6 +35,9 @@ class RPNModel(AM.Model):
         # uncomment if you don't have a proxy
         # self.pretrained_model = InceptionResNetV2(include_top=False, weights='imagenet')
         self.pretrained_model = InceptionResNetV2(include_top=False, weights='D:/Users/T0227964-A/.keras/models/inception_resnet_v2_weights_tf_dim_ordering_tf_kernels_notop.h5')
+        
+        # variable to fixed the bug of having two tf graphs at the same time (the CNN and RPN ones). This variable saves the graph of the pretrained_model
+        self.graph = tf.get_default_graph()
 
     def createModel(self, input_shape = (None,None,1536), num_classes = None):
 
@@ -70,14 +76,22 @@ class RPNModel(AM.Model):
         self.model.compile(optimizer='adam', loss={'scores1':'binary_crossentropy', 'deltas1':'mse'})
 
     def tiling_input_image(self, img, gt_boxes):
+        k = NUM_OF_ANCHORS
+
         img_width=np.shape(img)[1]
         img_height=np.shape(img)[0]
+
         # TODO: initialiser gt_boxes (format (k, 4) avec k le nombres de boxes dans l'image)
 
         ## First objective: We need to get all the possible anchors to feed our rpn network with the correct data for each of them
 
         # We get the feature map from the pre-trained model to feed it into the RPN model
-        feature_map = self.pretrained_model.predict(x)
+        x = img_to_array(img)
+        x = np.expand_dims(x, axis=0)
+        with self.graph.as_default():
+            #print('Generating feature map..')
+            feature_map = self.pretrained_model.predict(x)
+            #print('Feature map generated ! Ready to be processed')
 
         height = np.shape(feature_map)[1]
         width = np.shape(feature_map)[2]
@@ -87,16 +101,19 @@ class RPNModel(AM.Model):
         w_stride = img_width / width
         h_stride = img_height / height
 
+        # we generate all the possible anchors from the tiles created earlier
+        base_anchors=generate_anchors(w_stride,h_stride,scales=np.asarray(SCALE_OF_ANCHORS))
+
         # we split the original_image into a grid of height*width tiles of individual sizes of (h_stride, w_stride)
         shift_x = np.arange(0, width) * w_stride
         shift_y = np.arange(0, height) * h_stride
         shift_x, shift_y = np.meshgrid(shift_x, shift_y)
         shifts = np.vstack((shift_x.ravel(), shift_y.ravel(), shift_x.ravel(),shift_y.ravel())).transpose()
         
-        # we generate all the possible anchors from the tiles created earlier
-        base_anchors=generate_anchors(w_stride,h_stride,scale=np.asrray(SCALE_OF_ANCHORS))
         all_anchors = (base_anchors.reshape((1, 9, 4)) +
-            shifts.reshape((1, num_feature_map, 4)).transpose((1, 0, 2)))
+                    shifts.reshape((1, num_feature_map, 4)).transpose((1, 0, 2)))
+        total_anchors = num_feature_map*9
+        all_anchors = all_anchors.reshape((total_anchors, 4))
 
         # we delete all the anchors with pixels outside of the image 
         border=0
@@ -132,15 +149,15 @@ class RPNModel(AM.Model):
         # we set every anchor with an overlaping ratio over 0.7 (as specified in the paper) at 1, those lower than .3 at 0. those in between are ignored
         labels[max_overlaps >= .7] = 1
         labels[max_overlaps <= .3] = 0
-        # to be sure to respect the desired batch size of 256 elements, we sample the positive (0 or 1) labels that are potentialy more numerosous than 256.
 
+        # to be sure to respect the desired batch size of 256 elements, we sample the positive (0 or 1) labels that are potentialy more numerosous than 256.
         fg_inds = np.where(labels == 1)[0]
         num_max_bg = int(len(fg_inds) * BG_FG_RATIO)
         bg_inds = np.where(labels == 0)[0]
         # If there is more bg samples than specified by- the bg_fg_ratio, then we subsample it randomly by ignoring (setting their label to -1) a certain amount of them
         if len(bg_inds) > num_max_bg:
             disable_inds = npr.choice(
-                bg_inds, size=(len(bg_inds) - num_bg), replace=False)
+                bg_inds, size=(len(bg_inds) - num_max_bg), replace=False)
         labels[disable_inds] = -1
 
         # we prepare the batch of data by assigning to each feature map point an index of the form of integer. This index specifies to which tiles the anchor is supposed to be working on
@@ -163,12 +180,14 @@ class RPNModel(AM.Model):
         full_labels = unmap(labels, total_anchors, inds_inside, fill=-1)
         batch_label_targets=full_labels.reshape(-1,1,1,1*k)[batch_inds]
 
-                    # We create the variables that will hold the the target bbox batch of shape (batch_size, 1, 1, 4*9) for k = 9
+        # We create the variables that will hold the the target bbox batch of shape (batch_size, 1, 1, 4*9) for k = 9
         bbox_targets = np.zeros((len(inds_inside), 4), dtype=np.float32)
         pos_anchors=all_anchors[inds_inside[labels==1]]
         bbox_targets = bbox_transform(pos_anchors, gt_boxes[argmax_overlaps, :][labels==1])
         bbox_targets = unmap(bbox_targets, total_anchors, inds_inside[labels==1], fill=0)
         batch_bbox_targets = bbox_targets.reshape(-1,1,1,4*k)[batch_inds]
+
+        #print('Feature map processed and outputed')
 
         return np.asarray(batch_tiles), batch_label_targets.tolist(), batch_bbox_targets.tolist()
 
@@ -190,29 +209,62 @@ class RPNModel(AM.Model):
             while 1:
                 for x in x_tmp:
                     img = load_img(x)
-                    gt_boxes = y_tmp[img]
+                    tmp_x = x.split('.')
+                    x_without_extension = tmp_x[len(tmp_x)-2]
+                    tmp_x = x_without_extension.split('/')
+                    x_without_path = tmp_x[len(tmp_x)-1]
+                    gt_boxes = y_tmp[x_without_path]
+
+                                
+                    w_scale=1
+                    h_scale=1
+
+                    img_width=np.shape(img)[1]
+                    img_height=np.shape(img)[0]
+
+                    if img_width < 333:
+                        w_scale=333/img_width
+                        img_width=333
+                    if img_height < 333:
+                        h_scale=333/img_height
+                        img_height=333
+
+                    scale=(h_scale,w_scale)
+
+                    img_width=np.shape(img)[1] * scale[1]
+                    img_height=np.shape(img)[0] * scale[0]
+
+                    img=img.resize((int(img_width),int(img_height)))
+
+                    
+                    for box in gt_boxes:
+                        box[0] = img_width*box[0]
+                        box[1] = img_height*box[1]
+                        box[2] = img_width*box[2]
+                        box[3] = img_height*box[3]
 
                     tiles, labels, bboxes = self.tiling_input_image(img, gt_boxes)
                     for i in range(len(tiles)):
-
+                        #print("\t[n°{}] - Processing tile of image '{}'".format(i, x_without_path))
                         batch_tiles.append(tiles[i])
                         batch_labels.append(labels[i])
                         batch_bboxes.append(bboxes[i])
-
+                        #print("\tSizes: batch_tiles({}), batch_labels({}), batch_bboxes({})".format(len(batch_tiles), len(batch_labels), len(batch_bboxes)))
                         if(len(batch_tiles)==BATCH_SIZE):
                             a=np.asarray(batch_tiles)
                             b=np.asarray(batch_labels)
                             c=np.asarray(batch_bboxes)
-                            if not a.any() or not b.any() or not c.any():
-                                print("empty array found.")
+                            #if not a.any() or not b.any() or not c.any():
+                                #print("empty array found.")
 
                             yield a, [b, c]
+                            #print('Sending batch...')
                             batch_tiles=[]
                             batch_labels=[]
                             batch_bboxes=[]
                     
                     
-        model.fit_generator(input_generator(), epochs=NUM_OF_EPOCHS)
+        self.model.fit_generator(input_generator(), steps_per_epoch=STEPS_PER_EPOCH, epochs=NUM_OF_EPOCHS)
     
     def evaluateModel(self, test_dataset):
         #TODO

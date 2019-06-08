@@ -85,4 +85,4 @@ def exec():
         runModel(model=LCN.DeepFaceModel(), dataset=dummyDataset.DummyDataset((152,152,3),1000), toFlatten=False)
 
     if (choice == 8):
-        runModel(model=RPN.RPNModel(), dataset=openImageBboxDataset.OpenImageBboxDataset(path_to_bounding_boxes_sheet="D:/Users/T0227964-A/Documents/BBox_Dataset/train-annotations-bbox.csv", path_to_image_files="D:/Users/T0227964-A/Documents/BBox_Dataset/train_0.tar/train_0"))
+        runModel(model=RPN.RPNModel(), dataset=openImageBboxDataset.OpenImageBboxDataset(path_to_bounding_boxes_sheet="D:/Users/T0227964-A/Documents/BBox_Dataset/train-annotations-bbox.csv", path_to_image_files="D:/Users/T0227964-A/Documents/BBox_Dataset/train_0.tar/train_0", image_file_extension=".jpg"))
